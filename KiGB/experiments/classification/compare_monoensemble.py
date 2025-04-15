@@ -49,7 +49,7 @@ for dataset in data_list:
         y_train = train_data[target]
 
         # Learn KiGB
-        skigb = SKiGB(criterion='mse',
+        skigb = SKiGB(criterion='squared_error',
                       n_estimators=30,
                       max_depth=14,
                       learning_rate=0.1,
@@ -67,7 +67,7 @@ for dataset in data_list:
         # Learn Mono Ensemble
         incr_feats =  np.where(advice == +1)[0]
         decr_feats = np.where(advice == -1)[0]
-        mono = MonoGradientBoostingClassifier(criterion='mse',
+        mono = MonoGradientBoostingClassifier(criterion='squared_error',
                                               n_estimators=30,
                                               max_depth=14,
                                               learning_rate=0.1,

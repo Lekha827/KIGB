@@ -9,7 +9,7 @@ class SKiGB(GradientBoostingRegressor, RegressorMixin):
     def _make_estimator(self, append=True):
         pass
 
-    def __init__(self, criterion='mse',
+    def __init__(self, criterion='squared_error',
                  n_estimators=35,
                  max_depth=10,
                  learning_rate=0.1,
