@@ -57,7 +57,7 @@ class LKiGB(LGBMModel, RegressorMixin):
         update = kigb_penalty_update(kigb_gbm, self.advice, lamda=self.lamda, epsilon=self.epsilon)
         if update:
             zero_update=False
-            kigb_gbm.model_from_string(update, verbose=False)
+            kigb_gbm.model_from_string(update)
             if render: # Rrender tree in pdf for debugging
                 graph = lgb.create_tree_digraph(kigb_gbm, tree_index=0, name='after_update_' + str(0))
                 graph.render('./render/lgbm/after_update_' + str(0))
@@ -80,7 +80,7 @@ class LKiGB(LGBMModel, RegressorMixin):
             update = kigb_penalty_update(kigb_gbm, self.advice, h, lamda=self.lamda, epsilon=self.epsilon)
             if update:
                 zero_update=False
-                kigb_gbm.model_from_string(update, verbose=False)
+                kigb_gbm.model_from_string(update)
                 if render: # Render tree for debugging
                     graph = lgb.create_tree_digraph(kigb_gbm, tree_index=h, name='after_update_' + str(h))
                     graph.render('./render/lgbm/after_update_' + str(h))

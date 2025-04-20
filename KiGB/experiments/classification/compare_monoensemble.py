@@ -17,7 +17,7 @@ except ImportError:
     from experiments.classification.setting import *
 
 
-data_list = ['australia','car','cleveland','ljubljana']
+data_list = ['adult', 'australia','car','cleveland','ljubljana']
 
 
 def get_error(clf_model, X, y):

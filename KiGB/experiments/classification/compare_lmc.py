@@ -20,7 +20,7 @@ logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 """Run comparision of LIGHTBM, LightGBM with inbuilt monotonicity constraint and KiGB """
 
-data_list = ['australia','car','cleveland','ljubljana']
+data_list = ['adult','australia','car','cleveland','ljubljana']
 
 def get_error(y_test, y_pred):
     return accuracy_score(y_test, (y_pred > 0.5).astype(int))
@@ -88,7 +88,7 @@ for dataset in data_list:
     mc_ttest = ttest_rel(lmc_score, kigb_score)
 
     result = result +"\nFor '" + dataset + "' dataset, LKiGB achieved accuracy of '" + str(
-        round(kigb_accuracy, 3)) + "' and LMC achieved accuracy of '" + str(round(lmc_accuracy, 3)) + "'."
-
+        round(kigb_accuracy, 3)) + "' and LMC achieved accuracy of '" + str(round(lmc_accuracy, 3)) + "P value of: "+ str(
+            mc_ttest.pvalue) +"'."
 
 logging.info(result)

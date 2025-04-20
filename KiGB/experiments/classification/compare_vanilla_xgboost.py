@@ -16,12 +16,13 @@ except ImportError:
     from core.scikit.skigb import SKiGB
     from experiments.classification.setting import *
 
-import xgboost as xgb  # <--- NEW
+import xgboost as xgb
 
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
-mono_coef_calc_type = 'boost'
-data_list = ['adult', 'australia','car','cleveland','ljubljana']
+# Use this list to test multiple datasets
+data_list = ['adult', 'australia', 'ljubljana']
+# data_list = ['ljubljana']  # For testing a single dataset
 
 def get_error(clf_model, X, y):
     y_pred = clf_model.predict(X)
@@ -29,24 +30,23 @@ def get_error(clf_model, X, y):
 
 for dataset in data_list:
     dirName = './datasets/classification/' + dataset
-    test_data = pd.read_csv(dirName + '/test.csv')
+    test_data = pd.read_csv(f"{dirName}/test.csv")
     target = data_target[dataset]
     X_test = test_data.drop(target, axis=1)
     y_test = test_data[target]
     advice = np.array(data_advice[dataset].split(','), dtype=int)
 
-    # Setting Parameter
     fold_size = 5
-    kigb_score = np.zeros((fold_size), dtype=np.float64)
-    gb_score = np.zeros((fold_size), dtype=np.float64)
-    xgb_score = np.zeros((fold_size), dtype=np.float64)  # <--- NEW
+    kigb_score = np.zeros(fold_size)
+    gb_score = np.zeros(fold_size)
+    xgb_score = np.zeros(fold_size)
 
-    for fold in range(0, fold_size):
-        train_data = pd.read_csv(dirName + '/train_' + str(fold) + '.csv')
+    for fold in range(fold_size):
+        train_data = pd.read_csv(f"{dirName}/train_{fold}.csv")
         X_train = train_data.drop(target, axis=1)
         y_train = train_data[target]
 
-        # Learn KiGB
+        # SKiGB
         skigb = SKiGB(criterion='squared_error',
                       n_estimators=30,
                       max_depth=14,
@@ -54,24 +54,22 @@ for dataset in data_list:
                       loss='deviance',
                       random_state=12,
                       advice=advice,
-                      lamda=data_penalty[dataset],
-                      epsilon=data_margin[dataset]
-                      )
+                      lamda=5,
+                      epsilon=-0.3)
         skigb.fit(X_train, y_train)
         kigb_score[fold] = get_error(skigb.kigb, X_test, y_test)
 
-        # Learn GB
+        # Scikit-GB
         clf = GradientBoostingClassifier(criterion='squared_error',
                                          n_estimators=30,
                                          max_depth=14,
                                          learning_rate=0.1,
                                          loss='deviance',
-                                         random_state=12
-                                         )
+                                         random_state=12)
         clf.fit(X_train, y_train)
         gb_score[fold] = get_error(clf, X_test, y_test)
 
-        # Learn XGBoost
+        # XGBoost
         xgb_clf = xgb.XGBClassifier(n_estimators=30,
                                     max_depth=14,
                                     learning_rate=0.1,
@@ -82,23 +80,20 @@ for dataset in data_list:
         xgb_clf.fit(X_train, y_train)
         xgb_score[fold] = get_error(xgb_clf, X_test, y_test)
 
-    # Aggregate
-    kigb_accuracy = np.mean(kigb_score)
-    gb_accuracy = np.mean(gb_score)
-    xgb_accuracy = np.mean(xgb_score)
+    # Averages
+    kigb_acc = np.mean(kigb_score)
+    gb_acc = np.mean(gb_score)
+    xgb_acc = np.mean(xgb_score)
 
     kigb_std = np.std(kigb_score)
     gb_std = np.std(gb_score)
     xgb_std = np.std(xgb_score)
 
-    # Paired t-test between XGBoost and others
+    # Paired t-tests
     ttest_kigb_xgb = ttest_rel(xgb_score, kigb_score)
-    ttest_gb_xgb = ttest_rel(xgb_score, gb_score)
+    ttest_kigb_gb = ttest_rel(kigb_score, gb_score)
 
-    # Final Output
-    logging.info(f"\nDataset: '{dataset}'")
-    logging.info(f"  SKiGB Accuracy: {kigb_accuracy:.3f} ")
-    logging.info(f"  Scikit-GB Accuracy: {gb_accuracy:.3f}")
-    logging.info(f"  XGBoost Accuracy: {xgb_accuracy:.3f}")
-    logging.info(f"  T-test (XGBoost vs SKiGB): p-value = {ttest_kigb_xgb.pvalue:.4f}")
-    logging.info(f"  T-test (XGBoost vs Scikit-GB): p-value = {ttest_gb_xgb.pvalue:.4f}")
+    # Report
+    logging.info(f"\nDataset: '{dataset}' SKiGB Accuracy: {kigb_acc:.3f};  SGB Accuracy: {gb_acc:.3f}; XGBoost Accuracy: {xgb_acc:.3f}")
+    logging.info(f"  T-test (XGBoost vs SKiGB):     p-value = {ttest_kigb_xgb.pvalue:.10f}")
+    logging.info(f"  T-test (SKiGB vs Scikit-GB):   p-value = {ttest_kigb_gb.pvalue:.10f}")

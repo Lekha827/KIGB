@@ -21,6 +21,7 @@ import xgboost as xgb  # NEW
 logging.basicConfig(format='%(message)s', level=logging.INFO)
 
 data_list = ['abalone','autompg','autoprice','boston','california','cpu','crime','redwine','whitewine','windsor']
+# data_list = ['abalone']
 
 def get_error(reg_model, X, y):
     y_pred = reg_model.predict(X)
@@ -52,8 +53,8 @@ for dataset in data_list:
                       loss='ls',
                       random_state=12,
                       advice=advice,
-                      lamda=data_penalty[dataset],
-                      epsilon=data_margin[dataset]
+                      lamda=5,
+                      epsilon=-0.3
                       )
         skigb.fit(X_train, y_train)
         kigb_score[fold] = get_error(skigb.kigb, X_test, y_test)
@@ -77,7 +78,7 @@ for dataset in data_list:
                                    verbosity=0,
                                    random_state=12)
         xgb_reg.fit(X_train, y_train)
-        xgb_score[fold] = get_error(xgb_reg, X_test, y_test)
+        xgb_score[fold] =  get_error(xgb_reg, X_test, y_test)
 
     # Averages
     kigb_mse = np.mean(kigb_score)
@@ -89,13 +90,10 @@ for dataset in data_list:
     xgb_std = np.std(xgb_score)
 
     # Paired t-tests
-    ttest_kigb_xgb = ttest_rel(xgb_score, kigb_score)
-    ttest_gb_xgb = ttest_rel(xgb_score, gb_score)
+    ttest_kigb_xgb = ttest_rel(kigb_score, xgb_score)
+    ttest_kigb_gb = ttest_rel(kigb_score, gb_score)
 
     # Report
-    logging.info(f"\nDataset: '{dataset}'")
-    logging.info(f"  SKiGB MSE:  {kigb_mse:.3f}")
-    logging.info(f"  SGB MSE:  {gb_mse:.3f}")
-    logging.info(f"  XGBoost MSE:   {xgb_mse:.3f}")
-    logging.info(f"  T-test (XGBoost vs SKiGB):     p-value = {ttest_kigb_xgb.pvalue:.4f}")
-    logging.info(f"  T-test (XGBoost vs SGB): p-value = {ttest_gb_xgb.pvalue:.4f}")
+    logging.info(f"\nDataset: '{dataset}' SKiGB MSE:  {kigb_mse:.3f};  SGB MSE:  {gb_mse:.3f}; XGBoost MSE:   {xgb_mse:.3f}")
+    logging.info(f"  T-test (SKiGB vs XGBoost ):     p-value = {ttest_kigb_xgb.pvalue:.10f}")
+    logging.info(f"  T-test (SKiGB vs SGB): p-value = {ttest_kigb_gb.pvalue:.10f}")
